@@ -1,0 +1,172 @@
+<?php
+
+/**
+ * Implements hook_registry_alter().
+ */
+
+function fix_comments_theme_registry_alter(&$theme_registry) {
+  
+  if (isset($theme_registry['comment_wrapper'])) {
+    if(!array_key_exists('path', $theme_registry['comment_wrapper'])) {
+      //$theme_registry['comment_wrapper']['path'] = drupal_get_path('module', 'fix_comments') . '/theme';
+      $theme_registry['comment_wrapper']['path'] = drupal_get_path('module', 'fix_comments') . '/theme';
+      $theme_registry['comment_wrapper']['template'] = "comment-wrapper";
+      //$theme_registry['comment_wrapper']['theme path'] = '';
+    }
+  }
+  
+  if (isset($theme_registry['comment'])) {
+    if(!array_key_exists('path', $theme_registry['comment'])) {
+     // $theme_registry['comment']['path'] = drupal_get_path('module', 'fix_comments') . '/theme';
+      $theme_registry['comment']['path'] = drupal_get_path('module', 'fix_comments') . '/theme';
+      $theme_registry['comment']['template'] = "comment";
+     // $theme_registry['comment']['theme path'] = '';
+    }
+  }
+ 
+ // print_r($theme_registry['comment_wrapper']);
+ // print_r($theme_registry['comment']);
+  
+ // exit; 
+}
+
+function fix_comments_preprocess_comment(&$variables) {
+  $comment = $variables['elements']['#comment'];
+  
+  $reply_link_arr = $variables['content']['links']['comment']['#links']['comment-reply'];
+  $reply_link = $variables['content']['links'];
+  unset($reply_link['comment']['#links']);
+  $reply_link['comment']['#links']['comment-reply'] = $reply_link_arr ;
+  
+  $variables['reply'] = $reply_link;
+  
+  unset($variables['content']['links']['comment']['#links']['comment-reply']);
+  //print_r($reply_link);
+
+  $uri = entity_uri('comment', $comment);
+  $uri['options'] += array('attributes' => array(
+      'class' => 'permalink',
+      'rel' => 'bookmark',
+    ));
+  //print_r($variables['created']);
+  $variables['created']   = format_date($comment->created, 'custom', 'D d/m/Y - H:i');
+  $variables['title']     = l($comment->subject, $uri['path'], $uri['options']);
+  $variables['permalink'] = l('#', $uri['path'], $uri['options']);
+  $variables['submitted'] = t('!username, !datetime', array('!username' => $variables['author'], '!datetime' => $variables['created']));
+
+}
+
+/*
+//
+// * Implements hook_theme_registry_alter()
+//
+function fix_comments_theme_registry_alter(&$theme_registry) {
+  $mod_path = drupal_get_path('module', 'fix_comments');
+  $theme_registry_copy = $theme_registry;       // munge on a copy
+  _theme_process_registry($theme_registry_copy, 'phptemplate', 'theme_engine', 'pow', $mod_path);
+  $theme_registry += array_diff_key($theme_registry_copy, $theme_registry);
+  $hooks = array('comment_wrapper', 'comment');
+  foreach ($hooks as $h) {
+    _fix_comments_insert_after_first_element($theme_registry[$h]['theme paths'], $mod_path);
+  }
+  
+ // print_r($theme_registry['comment_wrapper']);
+ // print_r($theme_registry['comment']);
+  
+ // exit; 
+}
+
+//
+// * Helper function for re-ordering arrays (needed by theme_registry_alter)
+//
+function _fix_comments_insert_after_first_element(&$a, $element) {
+  if(is_array($a)) {
+    $first_element = array_shift($a);
+    array_unshift($a, $first_element, $element);
+  } else if($a) {
+    $el = $a;
+    $a = array($el);
+    $first_element = array_shift($a);
+    array_unshift($a, $first_element, $element);
+  } else {
+    $a = array($element);
+  }
+} */
+
+function fix_comments_form_comment_form_alter(&$form, &$form_state, $form_id)
+{
+  //print_r($form);
+  
+  $form['#prefix'] = '<div class="row">';
+  $form['#suffix'] = '</div>';
+
+  $form['author']['#prefix'] = "<div class='comment-contacts-wrapper span5'>";
+  $form['author']['#weight'] = -2;
+
+  
+  $form['author']['homepage']['#access'] = FALSE;
+  
+  unset($form['subject']);
+  //$form['subject']['#size'] = 30;
+  
+ // $form['author']['mail']['#required'] = TRUE;
+  if($form['is_anonymous']['#value'] == 1)
+  {
+    $form['author']['mail']['#access'] = TRUE;
+  }
+  
+  if(array_key_exists('#title', $form['author']['name'])) {
+    
+    $form['author']['name']['#attributes'] = array('placeholder' => $form['author']['name']['#title']);
+    $form['author']['name']['#title_display'] = 'invisible';
+    $form['author']['mail']['#attributes'] = array('placeholder' => $form['author']['mail']['#title']);
+    $form['author']['mail']['#title_display'] = 'invisible';
+    
+    
+    
+  }
+  
+  
+  
+  //invisible
+  //$form['#attributes'] = array('class' => array('search-form'));
+  
+  $language = $form['comment_body']['#language'];
+  
+  $form['comment_body'][$language][0]['#title_display'] = 'invisible';
+  $form['comment_body'][$language][0]['#resizable'] = FALSE;
+  $form['comment_body'][$language][0]['#rows'] = 10;
+  unset($form['comment_body'][$language][0]['#title']);
+  $form['comment_body']['#weight'] = -5;
+  $form['comment_body']['#prefix'] = '<div class="span7">';
+  $form['comment_body']['#suffix'] = '</div>';
+  
+  $form['comment_body']['#after_build'][] = '_fix_comments_customize_comment_form';  
+  
+  $form['actions']['submit']['#value'] = t('Отправить комментарий');
+  $form['actions']['#weight'] = -1;
+  $form['actions']['#suffix'] = "</div>";
+  unset($form['actions']['preview']);
+  
+}
+
+function _fix_comments_customize_comment_form(&$form) 
+{
+  
+  
+  $language = $form['#language'];
+ // print_r(array_keys($form[$language][0]));
+ // print_r($form);
+  // скрываем элемент выбора формата ввода
+  // $form[$language][0][]
+//  $form[$language][0]['format']['#access'] = FALSE;
+  $form[$language][0]['format']['guidelines']['#access'] = FALSE; // Note ‘und’, you may need to set your comment form language code instead
+  // скрываем подсказки
+  $form[$language][0]['format']['help']['#access'] = FALSE;
+  
+  unset($form[$language][0]['format']['#type']);
+ 
+  unset($form[$language][0]['#title']);
+  
+  return $form;  
+}

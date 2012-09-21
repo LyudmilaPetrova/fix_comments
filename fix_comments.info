@@ -1,0 +1,11 @@
+name = fix_comments
+description = "Fix comments forms and templates"
+core = 7.x
+package = Custom
+
+dependencies[] = comment
+dependencies[] = less
+
+files[] = fix_comments.module
+stylesheets[all][] = theme/fix_comments.less
+

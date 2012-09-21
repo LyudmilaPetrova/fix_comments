@@ -1,0 +1,72 @@
+
+.link-color(@color) {
+	& 		             { color: @color; }
+    &:visited 			 { color: @color; }
+    /*&:focus, */&:hover { color: lighten(@color, 20%); }
+    &:active 			 { color: lighten(@color, 20%); }
+}
+
+
+h2.comment-title {
+  font-size: 18px;
+  font-weight: normal;
+}
+
+form.comment-form {
+  textarea{ width: 100%; }
+  
+  .form-actions {
+    background: none;
+    border: 0;
+    padding: 0px;
+  }
+}
+
+div.comment {
+  div.submitted {
+    background-color: #f1f3ed;
+    border: 0;
+    margin: 0px;
+    
+    padding: 9px;
+    color: #8d8d8d;
+    span.username {
+      color: #252525;
+    }
+    
+    .links {
+      float: right;
+    }
+  }
+  
+  div.content {
+    padding: 9px 9px 0px 9px;
+  }
+  
+  ul.links {
+    padding: 0px 9px 9px 9px;
+    li {
+      display: inline;
+      margin: 0px 9px 0px 0px;
+      
+      &.comment-approve {
+        a {
+          @green: #00cc00;
+          .link-color(@green);
+        }
+      }
+      
+      &.comment-delete {
+        a {
+          @red: #cc0000;
+          .link-color(@red);
+        }
+         
+      }
+    }
+  }
+}
+
+.indented {
+    margin-left: 25px;
+}
